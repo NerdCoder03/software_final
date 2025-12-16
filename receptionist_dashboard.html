@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Receptionist Dashboard - Mental Health Care System</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f0f4f8;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 32px 8px;
+    }
+    .dashboard {
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(15,23,42,0.16);
+      max-width: 1280px;
+      width: 100%;
+      min-height: 80vh;
+      padding: 28px 32px;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .header h1 {
+      margin: 0;
+      color: #1e293b;
+      font-size: 22px;
+    }
+    .header span {
+      font-size: 13px;
+      color: #64748b;
+    }
+    .section-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #0f172a;
+      margin: 8px 0 12px;
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1.6fr 1fr;
+      gap: 18px 24px;
+    }
+    label {
+      display: block;
+      margin: 6px 0 2px;
+      font-size: 13px;
+      color: #111827;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 7px 9px;
+      border-radius: 4px;
+      border: 1px solid #cbd5e1;
+      font-size: 13px;
+      resize: vertical;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      margin-top: 6px;
+    }
+    th, td {
+      border: 1px solid #e2e8f0;
+      padding: 6px 8px;
+      text-align: left;
+    }
+    th {
+      background: #eff6ff;
+      color: #1e293b;
+    }
+    tr.clickable:hover {
+      background: #e5f2ff;
+      cursor: pointer;
+    }
+    .status-badge {
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      display: inline-block;
+    }
+    .status-Pending { background:#fee2e2; color:#b91c1c; }
+    .status-Checked-in { background:#fef3c7; color:#92400e; }
+    .status-Completed { background:#dcfce7; color:#166534; }
+    .status-Cancelled { background:#e5e7eb; color:#374151; }
+
+    .btn-sm {
+      padding: 4px 8px;
+      margin: 0 2px;
+      border-radius: 4px;
+      border: none;
+      font-size: 11px;
+      cursor: pointer;
+    }
+    .btn-pending { background:#f97316; color:#fff; }
+    .btn-in      { background:#22c55e; color:#fff; }
+    .btn-done    { background:#2563eb; color:#fff; }
+    .btn-cancel  { background:#ef4444; color:#fff; }
+
+    .small {
+      font-size: 12px;
+      color: #64748b;
+    }
+    .card {
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 12px 14px;
+      background: #f9fafb;
+      font-size: 14px;
+      color: #0f172a;
+      margin-bottom: 10px;
+    }
+    button.primary {
+      margin-top: 10px;
+      padding: 8px 16px;
+      border: none;
+      border-radius: 4px;
+      background: #2563eb;
+      color: #ffffff;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    button.primary:hover {
+      background: #1d4ed8;
+    }
+    .message {
+      margin-top: 8px;
+      font-size: 13px;
+      color: #15803d;
+    }
+    .error {
+      color: #b91c1c;
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard">
+    <div class="header">
+      <div>
+        <h1>Receptionist Dashboard</h1>
+        <span id="receptionistInfo">Logged in as Receptionist</span>
+      </div>
+      <button onclick="localStorage.removeItem('currentReceptionistId'); window.location.href='index.html';">
+        Logout
+      </button>
+    </div>
+
+    <div class="grid-2">
+      <div>
+        <div class="section-title">Appointments Queue</div>
+        <div class="card">
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <div style="flex:1 1 140px;">
+              <label for="filterDate">Filter by date</label>
+              <input type="date" id="filterDate">
+            </div>
+            <div style="flex:1 1 180px;">
+              <label for="filterDoctor">Filter by doctor</label>
+              <select id="filterDoctor">
+                <option value="">All doctors</option>
+              </select>
+            </div>
+            <div style="flex:1 1 160px;">
+              <label for="filterStatus">Filter by status</label>
+              <select id="filterStatus">
+                <option value="">All</option>
+                <option value="Pending">Pending</option>
+                <option value="Checked-in">Checked-in</option>
+                <option value="Completed">Completed</option>
+                <option value="Cancelled">Cancelled</option>
+              </select>
+            </div>
+            <div style="flex:0 0 auto; align-self:flex-end;">
+              <button class="primary" type="button" id="clearFiltersBtn">Clear filters</button>
+            </div>
+          </div>
+          <p class="small" style="margin-top:6px;">
+            Patient-cancelled appointments are read-only and cannot be changed here.
+          </p>
+        </div>
+
+        <table id="apptTable">
+          <thead>
+            <tr>
+              <th>Appt ID</th>
+              <th>Date</th>
+              <th>Time</th>
+              <th>Doctor</th>
+              <th>Patient ID</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="rxApptBody"></tbody>
+        </table>
+      </div>
+
+      <div>
+        <div class="section-title">Patient Details</div>
+        <div class="card">
+          <div><strong>ID:</strong> <span id="pdId">Select an appointment</span></div>
+          <div><strong>Name:</strong> <span id="pdName">-</span></div>
+          <div><strong>Email:</strong> <span id="pdEmail">-</span></div>
+          <div><strong>Phone:</strong> <span id="pdPhone">-</span></div>
+        </div>
+
+        <div class="section-title" style="margin-top:12px;">Create New Appointment</div>
+        <div class="card">
+          <label for="newPatientId">Patient ID (existing)</label>
+          <input type="text" id="newPatientId" placeholder="P001">
+
+          <label for="newDoctor">Doctor</label>
+          <select id="newDoctor">
+            <option value="">-- Choose doctor --</option>
+          </select>
+
+          <label for="newDate">Date</label>
+          <input type="date" id="newDate">
+
+          <label for="newTime">Time</label>
+          <select id="newTime"></select>
+
+          <label for="newReason">Reason</label>
+          <textarea id="newReason" rows="2"></textarea>
+
+          <button type="button" class="primary" id="createApptBtn">Create Appointment</button>
+          <div id="createMsg" class="message"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // session
+    const currentReceptionistId = localStorage.getItem("currentReceptionistId");
+    if (currentReceptionistId) {
+      document.getElementById("receptionistInfo").textContent =
+        "Receptionist (" + currentReceptionistId + ")";
+    } else {
+      document.getElementById("receptionistInfo").textContent =
+        "No active receptionist session. Please log in again.";
+    }
+
+    // data
+    const patientsRaw = localStorage.getItem("patients");
+    let allPatients = {};
+    if (patientsRaw) {
+      try { allPatients = JSON.parse(patientsRaw); } catch (e) { allPatients = {}; }
+    }
+
+    const apptsRaw = localStorage.getItem("appointments");
+    let appointments = [];
+    if (apptsRaw) {
+      try { appointments = JSON.parse(apptsRaw); } catch (e) { appointments = []; }
+    }
+
+    const doctors = JSON.parse(localStorage.getItem("doctors") || "[]");
+
+    function saveAppointments() {
+      localStorage.setItem("appointments", JSON.stringify(appointments));
+    }
+
+    const rxApptBody      = document.getElementById("rxApptBody");
+    const filterDate      = document.getElementById("filterDate");
+    const filterDoctor    = document.getElementById("filterDoctor");
+    const filterStatus    = document.getElementById("filterStatus");
+    const clearFiltersBtn = document.getElementById("clearFiltersBtn");
+
+    const pdId    = document.getElementById("pdId");
+    const pdName  = document.getElementById("pdName");
+    const pdEmail = document.getElementById("pdEmail");
+    const pdPhone = document.getElementById("pdPhone");
+
+    const newDoctor = document.getElementById("newDoctor");
+    const newDate   = document.getElementById("newDate");
+    const newTime   = document.getElementById("newTime");
+
+    const allSlots = [
+      "10:00","10:30","11:00","11:30",
+      "12:00","12:30","13:00","13:30",
+      "14:00","14:30","15:00","15:30","16:00"
+    ];
+
+    function populateDoctorSelects() {
+      filterDoctor.innerHTML = "<option value=''>All doctors</option>";
+      newDoctor.innerHTML    = "<option value=''>-- Choose doctor --</option>";
+      doctors.forEach(d => {
+        const label = d.name + " , " + d.spec;
+        const o1 = document.createElement("option");
+        o1.value = label; o1.textContent = label;
+        filterDoctor.appendChild(o1);
+        const o2 = document.createElement("option");
+        o2.value = label; o2.textContent = label;
+        newDoctor.appendChild(o2);
+      });
+    }
+
+    function statusClass(status) {
+      if (status === "Checked-in") return "status-Checked-in";
+      if (status === "Completed")  return "status-Completed";
+      if (status === "Cancelled")  return "status-Cancelled";
+      return "status-Pending";
+    }
+
+    function renderAppointmentsForReception() {
+      rxApptBody.innerHTML = "";
+      if (!appointments.length) {
+        const row  = document.createElement("tr");
+        const cell = document.createElement("td");
+        cell.colSpan = 7;
+        cell.textContent = "No appointments found.";
+        row.appendChild(cell);
+        rxApptBody.appendChild(row);
+        return;
+      }
+
+      const fDate   = filterDate.value;
+      const fDoc    = filterDoctor.value;
+      const fStatus = filterStatus.value;
+      const todayStr = new Date().toISOString().slice(0, 10);
+
+      const list = appointments
+        .filter(a => a.date >= todayStr)
+        .filter(a => !fDate   || a.date === fDate)
+        .filter(a => !fDoc    || a.doctor === fDoc)
+        .filter(a => !fStatus || a.status === fStatus)
+        .sort((a,b) => (a.date + a.time).localeCompare(b.date + b.time));
+
+      if (!list.length) {
+        const row  = document.createElement("tr");
+        const cell = document.createElement("td");
+        cell.colSpan = 7;
+        cell.textContent = "No appointments match the current filters.";
+        row.appendChild(cell);
+        rxApptBody.appendChild(row);
+        return;
+      }
+
+      list.forEach(a => {
+        const isPatientCancelled =
+          a.status === "Cancelled" && a.cancelledBy === "patient";
+
+        let actionsHtml = "";
+        if (isPatientCancelled) {
+          actionsHtml = "<span class='small'>Cancelled by patient</span>";
+        } else {
+          actionsHtml =
+            "<button class='btn-sm btn-pending' data-act='Pending'    data-id='" + a.id + "'>Pending</button>" +
+            "<button class='btn-sm btn-in'      data-act='Checked-in' data-id='" + a.id + "'>Check-in</button>" +
+            "<button class='btn-sm btn-done'    data-act='Completed'  data-id='" + a.id + "'>Done</button>" +
+            "<button class='btn-sm btn-cancel'  data-act='Cancelled'  data-id='" + a.id + "'>Cancel</button>";
+        }
+
+        const row  = document.createElement("tr");
+        row.classList.add("clickable");
+        const pid  = a.patientId || "Unknown";
+        row.innerHTML =
+          "<td>" + a.id   + "</td>" +
+          "<td>" + a.date + "</td>" +
+          "<td>" + a.time + "</td>" +
+          "<td>" + a.doctor + "</td>" +
+          "<td>" + pid + "</td>" +
+          "<td><span class='status-badge " + statusClass(a.status) + "'>" +
+            a.status + "</span></td>" +
+          "<td>" + actionsHtml + "</td>";
+
+        row.addEventListener("click", ev => {
+          if (ev.target.tagName.toLowerCase() === "button") return;
+          loadPatientDetails(pid);
+        });
+
+        rxApptBody.appendChild(row);
+      });
+
+      // attach handlers for status change
+      rxApptBody.querySelectorAll("button[data-act]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const id  = btn.getAttribute("data-id");
+          const act = btn.getAttribute("data-act");
+          const appt = appointments.find(a => a.id === id);
+          if (!appt) return;
+
+          // block patient-cancelled appointments
+          if (appt.status === "Cancelled" && appt.cancelledBy === "patient") {
+            return;
+          }
+
+          appt.status = act;
+          if (act === "Cancelled" && !appt.cancelledBy) {
+            appt.cancelledBy = "staff";
+          }
+          saveAppointments();
+          renderAppointmentsForReception();
+        });
+      });
+    }
+
+    function loadPatientDetails(patientId) {
+      if (!patientId || patientId === "Unknown") {
+        pdId.textContent    = "Unknown";
+        pdName.textContent  = "-";
+        pdEmail.textContent = "-";
+        pdPhone.textContent = "-";
+        return;
+      }
+      const p = allPatients[patientId];
+      pdId.textContent = patientId;
+      if (p) {
+        pdName.textContent  = p.name    || "-";
+        pdEmail.textContent = p.email   || "-";
+        pdPhone.textContent = p.contact || "-";
+      } else {
+        pdName.textContent  = "(not found)";
+        pdEmail.textContent = "-";
+        pdPhone.textContent = "-";
+      }
+    }
+
+    function refreshAvailableSlots() {
+      newTime.innerHTML = "";
+      const doctor = newDoctor.value;
+      const date   = newDate.value;
+      if (!doctor || !date) return;
+
+      const booked = appointments
+        .filter(a => a.doctor === doctor && a.date === date && a.status !== "Cancelled")
+        .map(a => a.time);
+
+      const freeSlots = allSlots.filter(t => !booked.includes(t));
+      freeSlots.forEach(t => {
+        const opt = document.createElement("option");
+        opt.value = t;
+        opt.textContent = t;
+        newTime.appendChild(opt);
+      });
+    }
+
+    filterDate.addEventListener("change", renderAppointmentsForReception);
+    filterDoctor.addEventListener("change", renderAppointmentsForReception);
+    filterStatus.addEventListener("change", renderAppointmentsForReception);
+    clearFiltersBtn.addEventListener("click", () => {
+      filterDate.value   = "";
+      filterDoctor.value = "";
+      filterStatus.value = "";
+      renderAppointmentsForReception();
+    });
+
+    newDoctor.addEventListener("change", refreshAvailableSlots);
+    newDate.addEventListener("change", refreshAvailableSlots);
+
+    const createApptBtn = document.getElementById("createApptBtn");
+    const createMsg     = document.getElementById("createMsg");
+
+    createApptBtn.onclick = function () {
+      createMsg.classList.remove("error");
+      createMsg.textContent = "";
+
+      const patientId = document.getElementById("newPatientId").value.trim();
+      const doctor    = newDoctor.value;
+      const date      = newDate.value;
+      const time      = newTime.value;
+      const reason    = document.getElementById("newReason").value.trim();
+
+      if (!patientId || !doctor || !date || !time || !reason) {
+        createMsg.textContent = "Fill all fields (patient, doctor, date, time, reason).";
+        createMsg.classList.add("error");
+        return;
+      }
+
+      if (!allPatients[patientId]) {
+        createMsg.textContent = "Patient ID not found in system.";
+        createMsg.classList.add("error");
+        return;
+      }
+
+      const id = "A" + String(appointments.length + 1).padStart(3, "0");
+      appointments.push({
+        id,
+        doctor,
+        date,
+        time,
+        reason,
+        status: "Pending",
+        patientId
+      });
+      saveAppointments();
+      renderAppointmentsForReception();
+      refreshAvailableSlots();
+
+      createMsg.textContent = "Appointment " + id + " created successfully.";
+      document.getElementById("newPatientId").value = "";
+      newDoctor.value = "";
+      newDate.value   = "";
+      newTime.innerHTML = "";
+      document.getElementById("newReason").value = "";
+    };
+
+    populateDoctorSelects();
+    renderAppointmentsForReception();
+  </script>
+</body>
+</html>

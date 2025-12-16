@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Doctor Dashboard - Mental Health Care System</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f0f4f8;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 32px 8px;
+    }
+    .dashboard {
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(15,23,42,0.16);
+      max-width: 1280px;
+      width: 100%;
+      min-height: 80vh;
+      padding: 28px 32px;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .header h1 {
+      margin: 0;
+      color: #1e293b;
+      font-size: 22px;
+    }
+    .header span {
+      font-size: 13px;
+      color: #64748b;
+    }
+    .section-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #0f172a;
+      margin: 8px 0 12px;
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr;
+      gap: 18px 24px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      margin-top: 6px;
+    }
+    th, td {
+      border: 1px solid #e2e8f0;
+      padding: 6px 8px;
+      text-align: left;
+    }
+    th {
+      background: #eff6ff;
+      color: #1e293b;
+    }
+    tr.clickable:hover {
+      background: #e5f2ff;
+      cursor: pointer;
+    }
+    label {
+      display: block;
+      margin: 6px 0 2px;
+      font-size: 13px;
+      color: #111827;
+    }
+    input, textarea {
+      width: 100%;
+      padding: 7px 9px;
+      border-radius: 4px;
+      border: 1px solid #cbd5e1;
+      font-size: 13px;
+      resize: vertical;
+    }
+    .med-row {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1.2fr auto;
+      gap: 6px;
+      margin-bottom: 6px;
+      align-items: center;
+    }
+    .med-row input {
+      width: 100%;
+    }
+    .add-btn, .remove-btn {
+      border: none;
+      border-radius: 999px;
+      padding: 4px 8px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .add-btn {
+      background: #22c55e;
+      color: #ffffff;
+    }
+    .add-btn:hover {
+      background: #16a34a;
+    }
+    .remove-btn {
+      background: #ef4444;
+      color: #ffffff;
+    }
+    .remove-btn:hover {
+      background: #b91c1c;
+    }
+    button.primary {
+      margin-top: 10px;
+      padding: 8px 16px;
+      border: none;
+      border-radius: 4px;
+      background: #2563eb;
+      color: #ffffff;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    button.primary:hover {
+      background: #1d4ed8;
+    }
+    .message {
+      margin-top: 8px;
+      font-size: 13px;
+      color: #15803d;
+    }
+    .error {
+      color: #b91c1c;
+    }
+    .small {
+      font-size: 12px;
+      color: #64748b;
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard">
+    <div class="header">
+      <div>
+        <h1>Doctor Dashboard</h1>
+        <span id="doctorInfo">Logged in as Doctor</span>
+      </div>
+      <button onclick="localStorage.removeItem('currentDoctorId'); window.location.href='index.html';">
+        Logout
+      </button>
+    </div>
+
+    <div class="grid-2">
+      <div>
+        <div class="section-title">Today's & Upcoming Appointments</div>
+        <p class="small">Click on an appointment row to start writing a prescription for that patient.</p>
+        <table>
+          <thead>
+            <tr>
+              <th>Appointment ID</th>
+              <th>Date</th>
+              <th>Time</th>
+              <th>Patient ID</th>
+              <th>Reason</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="docApptBody"></tbody>
+        </table>
+      </div>
+
+      <div>
+        <div class="section-title">Generate Prescription</div>
+        <label>Selected Appointment</label>
+        <input type="text" id="prApptInfo" readonly placeholder="Click an appointment row to load details">
+
+        <label>Patient ID</label>
+        <input type="text" id="prPatientId" readonly>
+
+        <label>Patient Name</label>
+        <input type="text" id="prPatientName" readonly>
+
+        <label>Patient Email</label>
+        <input type="text" id="prPatientEmail" readonly>
+
+        <label>Patient Phone</label>
+        <input type="text" id="prPatientPhone" readonly>
+
+        <label>Symptoms</label>
+        <textarea id="prSymptoms" rows="3"></textarea>
+
+        <label>Medicines</label>
+        <div id="medicinesContainer"></div>
+        <button type="button" class="add-btn" id="addMedBtn">+ Add another medicine</button>
+
+        <button type="button" class="primary" id="savePrBtn">Save Prescription</button>
+        <div id="prMsg" class="message"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // doctor identity from localStorage
+    const currentDoctorId = localStorage.getItem("currentDoctorId");
+    const doctorInfoSpan  = document.getElementById("doctorInfo");
+    const doctors         = JSON.parse(localStorage.getItem("doctors") || "[]");
+
+    const currentDoctor = doctors.find(d => d.id === currentDoctorId);
+
+    let doctorLabel = null;
+    if (currentDoctor) {
+      doctorLabel = currentDoctor.name + " , " + currentDoctor.spec;
+      doctorInfoSpan.textContent =
+        currentDoctor.name + " (" + currentDoctor.spec + ") - ID " + currentDoctor.id;
+    } else if (currentDoctorId) {
+      doctorInfoSpan.textContent = "Doctor ID " + currentDoctorId;
+    } else {
+      doctorInfoSpan.textContent = "No active doctor session. Please log in again.";
+    }
+
+    // patients
+    const allPatientsRaw = localStorage.getItem("patients");
+    let allPatients = {};
+    if (allPatientsRaw) {
+      try {
+        allPatients = JSON.parse(allPatientsRaw);
+      } catch (e) {
+        allPatients = {};
+      }
+    }
+
+    // appointments
+    let allAppointments = [];
+    const savedAppts = localStorage.getItem("appointments");
+    if (savedAppts) {
+      try {
+        allAppointments = JSON.parse(savedAppts);
+      } catch (e) {
+        allAppointments = [];
+      }
+    }
+
+    const docApptBody        = document.getElementById("docApptBody");
+    const prApptInfo         = document.getElementById("prApptInfo");
+    const prPatientId        = document.getElementById("prPatientId");
+    const prPatientName      = document.getElementById("prPatientName");
+    const prPatientEmail     = document.getElementById("prPatientEmail");
+    const prPatientPhone     = document.getElementById("prPatientPhone");
+    const prSymptoms         = document.getElementById("prSymptoms");
+    const medicinesContainer = document.getElementById("medicinesContainer");
+    const prMsg              = document.getElementById("prMsg");
+
+    let selectedAppt = null;
+
+    function renderDoctorAppointments() {
+      docApptBody.innerHTML = "";
+
+      if (!doctorLabel) {
+        const row = document.createElement("tr");
+        const cell = document.createElement("td");
+        cell.colSpan = 6;
+        cell.textContent = "No doctor logged in.";
+        row.appendChild(cell);
+        docApptBody.appendChild(row);
+        return;
+      }
+
+      const todayStr = new Date().toISOString().slice(0, 10);
+      const myAppts = allAppointments
+        .filter(a => a.doctor === doctorLabel)
+        .filter(a => a.date >= todayStr)
+        .filter(a => a.status !== "Cancelled") // HIDE ALL CANCELLED APPOINTMENTS
+        .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
+
+      if (myAppts.length === 0) {
+        const row = document.createElement("tr");
+        const cell = document.createElement("td");
+        cell.colSpan = 6;
+        cell.textContent = "No upcoming appointments for this doctor.";
+        row.appendChild(cell);
+        docApptBody.appendChild(row);
+        return;
+      }
+
+      myAppts.forEach(a => {
+        const row = document.createElement("tr");
+        row.classList.add("clickable");
+        const patientId = a.patientId || "Unknown";
+        row.innerHTML =
+          "<td>" + a.id + "</td>" +
+          "<td>" + a.date + "</td>" +
+          "<td>" + a.time + "</td>" +
+          "<td>" + patientId + "</td>" +
+          "<td>" + (a.reason || "") + "</td>" +
+          "<td>" + (a.status || "Pending") + "</td>";
+        row.addEventListener("click", () => {
+          loadAppointmentForPrescription(a);
+        });
+        docApptBody.appendChild(row);
+      });
+    }
+
+    function createMedicineRow(name = "", dosage = "", instructions = "") {
+      const div = document.createElement("div");
+      div.className = "med-row";
+
+      const nameInput = document.createElement("input");
+      nameInput.type = "text";
+      nameInput.placeholder = "Medicine name";
+      nameInput.value = name;
+
+      const doseInput = document.createElement("input");
+      doseInput.type = "text";
+      doseInput.placeholder = "Dosage";
+      doseInput.value = dosage;
+
+      const instrInput = document.createElement("input");
+      instrInput.type = "text";
+      instrInput.placeholder = "Instructions";
+      instrInput.value = instructions;
+
+      const removeBtn = document.createElement("button");
+      removeBtn.type = "button";
+      removeBtn.className = "remove-btn";
+      removeBtn.textContent = "−";
+      removeBtn.onclick = () => {
+        medicinesContainer.removeChild(div);
+      };
+
+      div.appendChild(nameInput);
+      div.appendChild(doseInput);
+      div.appendChild(instrInput);
+      div.appendChild(removeBtn);
+      medicinesContainer.appendChild(div);
+    }
+
+    document.getElementById("addMedBtn").onclick = function () {
+      createMedicineRow();
+    };
+
+    function resetPrescriptionForm() {
+      selectedAppt = null;
+      prApptInfo.value = "";
+      prPatientId.value = "";
+      prPatientName.value = "";
+      prPatientEmail.value = "";
+      prPatientPhone.value = "";
+      prSymptoms.value = "";
+      medicinesContainer.innerHTML = "";
+      prMsg.textContent = "";
+      prMsg.classList.remove("error");
+    }
+
+    function loadAppointmentForPrescription(appt) {
+      selectedAppt = appt;
+      const patientId = appt.patientId || "Unknown";
+      prApptInfo.value = appt.id + " | " + appt.date + " " + appt.time + " | " + patientId;
+      prPatientId.value = patientId;
+
+      const patientObj = allPatients[patientId] || null;
+      if (patientObj) {
+        prPatientName.value  = patientObj.name    || "";
+        prPatientEmail.value = patientObj.email   || "";
+        prPatientPhone.value = patientObj.contact || "";
+      } else {
+        prPatientName.value  = "";
+        prPatientEmail.value = "";
+        prPatientPhone.value = "";
+      }
+
+      prSymptoms.value = "";
+      medicinesContainer.innerHTML = "";
+      createMedicineRow();
+      prMsg.textContent = "";
+      prMsg.classList.remove("error");
+    }
+
+    document.getElementById("savePrBtn").onclick = function () {
+      prMsg.classList.remove("error");
+      prMsg.textContent = "";
+
+      if (!selectedAppt) {
+        prMsg.textContent = "Select an appointment first.";
+        prMsg.classList.add("error");
+        return;
+      }
+
+      const patientId = prPatientId.value.trim();
+      if (!patientId || patientId === "Unknown") {
+        prMsg.textContent = "Patient ID is missing for this appointment.";
+        prMsg.classList.add("error");
+        return;
+      }
+
+      const symptoms = prSymptoms.value.trim();
+      if (!symptoms) {
+        prMsg.textContent = "Please enter symptoms.";
+        prMsg.classList.add("error");
+        return;
+      }
+
+      const medRows = medicinesContainer.querySelectorAll(".med-row");
+      const meds = [];
+      medRows.forEach(row => {
+        const inputs = row.querySelectorAll("input");
+        const mName = inputs[0].value.trim();
+        const mDose = inputs[1].value.trim();
+        const mInstr= inputs[2].value.trim();
+        if (mName) {
+          meds.push({ name: mName, dosage: mDose, instructions: mInstr });
+        }
+      });
+
+      if (meds.length === 0) {
+        prMsg.textContent = "Add at least one medicine.";
+        prMsg.classList.add("error");
+        return;
+      }
+
+      const key = "prescriptionsByPatient";
+      let allPres = {};
+      const savedPres = localStorage.getItem(key);
+      if (savedPres) {
+        try {
+          allPres = JSON.parse(savedPres);
+        } catch (e) {
+          allPres = {};
+        }
+      }
+
+      const presForPatient = allPres[patientId] || [];
+      presForPatient.push({
+        appointmentId: selectedAppt.id,
+        date: new Date().toISOString().slice(0, 10),
+        time: selectedAppt.time,
+        doctor: doctorLabel || "",
+        symptoms,
+        medicines: meds
+      });
+      allPres[patientId] = presForPatient;
+      localStorage.setItem(key, JSON.stringify(allPres));
+
+      prMsg.textContent = "Prescription saved for patient " + patientId + ".";
+      prSymptoms.value = "";
+      medicinesContainer.innerHTML = "";
+      createMedicineRow();
+    };
+
+    renderDoctorAppointments();
+    resetPrescriptionForm();
+  </script>
+</body>
+</html>

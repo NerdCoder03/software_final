@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Admin Dashboard - Mental Health Care System</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f0f4f8;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 32px 8px;
+    }
+    .dashboard {
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(15,23,42,0.16);
+      max-width: 1280px;
+      width: 100%;
+      min-height: 80vh;
+      padding: 28px 32px;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .header h1 {
+      margin: 0;
+      color: #1e293b;
+      font-size: 22px;
+    }
+    .header span {
+      font-size: 13px;
+      color: #64748b;
+    }
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .tab {
+      padding: 8px 14px;
+      cursor: pointer;
+      font-size: 14px;
+      color: #475569;
+      border-radius: 6px 6px 0 0;
+    }
+    .tab.active {
+      background: #e0edff;
+      color: #1d4ed8;
+      font-weight: 600;
+    }
+    .section { display: none; }
+    .section.active { display: block; }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit,minmax(160px,1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .card {
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 10px 12px;
+      background: #f9fafb;
+      font-size: 13px;
+    }
+    .card-title {
+      font-size: 12px;
+      color: #64748b;
+      margin-bottom: 4px;
+    }
+    .card-value {
+      font-size: 20px;
+      font-weight: 600;
+      color: #111827;
+    }
+    .section-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #0f172a;
+      margin: 8px 0 10px;
+    }
+    label {
+      display: block;
+      margin: 4px 0 2px;
+      font-size: 13px;
+      color: #111827;
+    }
+    input, select {
+      width: 100%;
+      padding: 6px 8px;
+      border-radius: 4px;
+      border: 1px solid #cbd5e1;
+      font-size: 13px;
+    }
+    button { cursor: pointer; }
+    button.primary {
+      margin-top: 8px;
+      padding: 7px 14px;
+      border: none;
+      border-radius: 4px;
+      background: #2563eb;
+      color: #ffffff;
+      font-size: 13px;
+    }
+    button.primary:hover { background: #1d4ed8; }
+    button.danger {
+      padding: 4px 8px;
+      border: none;
+      border-radius: 4px;
+      background: #ef4444;
+      color: #ffffff;
+      font-size: 11px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      margin-top: 8px;
+    }
+    th, td {
+      border: 1px solid #e2e8f0;
+      padding: 6px 8px;
+      text-align: left;
+    }
+    th {
+      background: #eff6ff;
+      color: #1e293b;
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1.1fr 1.4fr;
+      gap: 18px;
+    }
+    .small {
+      font-size: 12px;
+      color: #64748b;
+    }
+    .message {
+      margin-top: 6px;
+      font-size: 13px;
+      color: #15803d;
+    }
+    .error { color: #b91c1c; }
+    .status-badge {
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      display: inline-block;
+    }
+    .status-Pending { background:#fee2e2; color:#b91c1c; }
+    .status-Checked-in { background:#fef3c7; color:#92400e; }
+    .status-Completed { background:#dcfce7; color:#166534; }
+    .status-Cancelled { background:#e5e7eb; color:#374151; }
+
+    /* Medicine sections */
+    .medicine-subsection {
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin-bottom: 14px;
+      background: #f9fafb;
+    }
+    .medicine-subsection h2 {
+      font-size: 15px;
+      margin: 0 0 8px;
+      color: #0f172a;
+    }
+    .output {
+      margin-top: 6px;
+      font-size: 13px;
+      color: #0f172a;
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard">
+    <div class="header">
+      <div>
+        <h1>Admin Dashboard</h1>
+        <span id="adminInfo">Logged in as Admin</span>
+      </div>
+      <button onclick="localStorage.removeItem('currentAdminId'); window.location.href='index.html';">
+        Logout
+      </button>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" data-target="overviewSec">Overview</div>
+      <div class="tab" data-target="doctorsSec">Doctors</div>
+      <div class="tab" data-target="dataSec">Patients & Appointments</div>
+      <div class="tab" data-target="medicineSec">Medicine Management</div>
+      <div class="tab" data-target="prescriptionMedSec">Prescription Medicines</div>
+      <div class="tab" data-target="feedbackSec">Feedback</div>
+    </div>
+
+    <!-- Overview -->
+    <div class="section active" id="overviewSec">
+      <div class="cards">
+        <div class="card">
+          <div class="card-title">Total Patients</div>
+          <div class="card-value" id="ovPatients">0</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Total Doctors</div>
+          <div class="card-value" id="ovDoctors">0</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Today&#39;s Appointments</div>
+          <div class="card-value" id="ovToday">0</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Completed (All Time)</div>
+          <div class="card-value" id="ovCompleted">0</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Cancelled (All Time)</div>
+          <div class="card-value" id="ovCancelled">0</div>
+        </div>
+      </div>
+
+      <p class="small">
+        Metrics are calculated from stored patients, doctors, and appointments.
+      </p>
+    </div>
+
+    <!-- Doctors management -->
+    <div class="section" id="doctorsSec">
+      <div class="grid-2">
+        <div>
+          <div class="section-title">Add Doctor</div>
+          <label for="docName">Name</label>
+          <input type="text" id="docName" placeholder="Dr John Doe">
+
+          <label for="docSpec">Specialization</label>
+          <input type="text" id="docSpec" placeholder="Psychiatry">
+
+          <label for="docLogin">Login ID</label>
+          <input type="text" id="docLogin" placeholder="D101">
+
+          <label for="docPass">Password</label>
+          <input type="password" id="docPass" placeholder="Set doctor password">
+
+          <button type="button" class="primary" id="addDocBtn">Add Doctor</button>
+          <div id="docMsg" class="message"></div>
+
+          <p class="small">
+            Doctors created here can log in from the main login page using the ID and password you assign.
+          </p>
+        </div>
+
+        <div>
+          <div class="section-title">Doctors List</div>
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Specialization</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="doctorsBody"></tbody>
+          </table>
+          <p class="small">
+            Removing a doctor here also removes their login credentials.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Patients & appointments -->
+    <div class="section" id="dataSec">
+      <div class="grid-2">
+        <div>
+          <div class="section-title">Patients</div>
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Phone</th>
+              </tr>
+            </thead>
+            <tbody id="patientsBody"></tbody>
+          </table>
+        </div>
+
+        <div>
+          <div class="section-title">Appointments (Read-only)</div>
+          <div class="card">
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <div style="flex:1 1 120px;">
+                <label for="adFilterDate">Date</label>
+                <input type="date" id="adFilterDate">
+              </div>
+              <div style="flex:1 1 180px;">
+                <label for="adFilterDoctor">Doctor</label>
+                <select id="adFilterDoctor">
+                  <option value="">All</option>
+                </select>
+              </div>
+              <div style="flex:1 1 140px;">
+                <label for="adFilterStatus">Status</label>
+                <select id="adFilterStatus">
+                  <option value="">All</option>
+                  <option value="Pending">Pending</option>
+                  <option value="Checked-in">Checked-in</option>
+                  <option value="Completed">Completed</option>
+                  <option value="Cancelled">Cancelled</option>
+                </select>
+              </div>
+              <div style="flex:0 0 auto; align-self:flex-end;">
+                <button class="primary" type="button" id="adClearFilters">Clear</button>
+              </div>
+            </div>
+            <p class="small" style="margin-top:6px;">
+              Appointment status is controlled by receptionist/doctor; admin can only view.
+            </p>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Doctor</th>
+                <th>Patient ID</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="apptsBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Medicine Management (administeredMedicines) -->
+    <div class="section" id="medicineSec">
+      <div class="section-title">Medicine Management</div>
+
+      <div class="medicine-subsection" id="record-admin">
+        <h2>Record Medicine Administration</h2>
+        <form id="adminForm">
+          <label>Medicine Name</label>
+          <input type="text" id="medicineName" required>
+
+          <label>Dose</label>
+          <input type="text" id="dose" required>
+
+          <label>Patient ID</label>
+          <input type="text" id="patientId" required>
+
+          <button class="primary" type="submit">Record Administration</button>
+        </form>
+        <div id="adminOutput" class="output"></div>
+      </div>
+
+      <div class="medicine-subsection" id="verify-details">
+        <h2>Verify Medicine Details</h2>
+        <form id="verifyForm">
+          <label>Medicine Name & Dose (e.g., Paracetamol 500mg)</label>
+          <input type="text" id="verifyMedicine" required>
+          <button class="primary" type="submit">Verify</button>
+        </form>
+        <div id="verifyOutput" class="output"></div>
+      </div>
+
+      <div class="medicine-subsection" id="manage-details">
+        <h2>Update Medicine Details</h2>
+        <form id="updateForm">
+          <label>Patient ID</label>
+          <input type="text" id="updPatientId" required>
+
+          <label>Old Medicine Name & Dose</label>
+          <input type="text" id="oldMedicine" required>
+
+          <label>New Medicine Name & Dose</label>
+          <input type="text" id="newMedicine" required>
+
+          <button class="primary" type="submit">Update Details</button>
+        </form>
+        <div id="updateOutput" class="output"></div>
+      </div>
+    </div>
+
+    <!-- Prescription Medicines from doctor prescriptionsByPatient -->
+    <div class="section" id="prescriptionMedSec">
+      <div class="section-title">Prescription Medicines (from Doctor)</div>
+      <div class="medicine-subsection">
+        <form id="prescLookupForm">
+          <label>Patient ID</label>
+          <input type="text" id="prescPatientId" required>
+          <button class="primary" type="submit">Fetch Prescriptions</button>
+        </form>
+        <div id="prescOutput" class="output small" style="margin-top:6px;"></div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Time</th>
+            <th>Doctor</th>
+            <th>Symptoms</th>
+            <th>Medicine</th>
+            <th>Dosage</th>
+            <th>Instructions</th>
+          </tr>
+        </thead>
+        <tbody id="prescMedBody"></tbody>
+      </table>
+    </div>
+
+    <!-- Feedback -->
+    <div class="section" id="feedbackSec">
+      <div class="section-title">Doctor Feedback Summary</div>
+      <table>
+        <thead>
+          <tr>
+            <th>Doctor</th>
+            <th>Average Rating</th>
+            <th>Total Reviews</th>
+          </tr>
+        </thead>
+        <tbody id="fbSummaryBody"></tbody>
+      </table>
+
+      <div class="section-title" style="margin-top:18px;">All Reviews</div>
+      <table>
+        <thead>
+          <tr>
+            <th>Doctor</th>
+            <th>Rating</th>
+            <th>Patient</th>
+            <th>Date</th>
+            <th>Comments</th>
+          </tr>
+        </thead>
+        <tbody id="fbDetailBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    // Session info
+    const currentAdminId = localStorage.getItem("currentAdminId");
+    const adminInfo = document.getElementById("adminInfo");
+    if (currentAdminId) {
+      adminInfo.textContent = "Admin (" + currentAdminId + ")";
+    } else {
+      adminInfo.textContent = "No active admin session. Please log in again.";
+    }
+
+    // Tabs
+    document.querySelectorAll(".tab").forEach(tab => {
+      tab.addEventListener("click", () => {
+        document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+        document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+        tab.classList.add("active");
+        document.getElementById(tab.dataset.target).classList.add("active");
+      });
+    });
+
+    // Helpers
+    function getJSON(key, fallback) {
+      const raw = localStorage.getItem(key);
+      if (!raw) return fallback;
+      try { return JSON.parse(raw); }
+      catch (e) { return fallback; }
+    }
+
+    let patients = getJSON("patients", {});         // object by ID
+    let appointments = getJSON("appointments", []); // array
+
+    // seed 4 prototype doctors once
+    let doctors = getJSON("doctors", null);
+    if (!doctors) {
+      doctors = [
+        { id: "D101", name: "Dr Asim Roychowdhury", spec: "Psychiatry",                      password: "DOC-101" },
+        { id: "D102", name: "Dr Arunima Sanyal",    spec: "Child and adolescent Psychology", password: "DOC-102" },
+        { id: "D103", name: "Dr Paresh Gupta",      spec: "Substance abuse counselor",       password: "DOC-103" },
+        { id: "D104", name: "Dr Zainab Sidduiqui",  spec: "Family Therapy",                  password: "DOC-104" }
+      ];
+      localStorage.setItem("doctors", JSON.stringify(doctors));
+    }
+
+    function saveDoctors() {
+      localStorage.setItem("doctors", JSON.stringify(doctors));
+    }
+
+    // feedbacks from patient dashboard
+    let feedbacks = getJSON("feedbacks", []);
+
+    // ---- Overview ----
+    function refreshOverview() {
+      const ovPatients = document.getElementById("ovPatients");
+      const ovDoctors = document.getElementById("ovDoctors");
+      const ovToday = document.getElementById("ovToday");
+      const ovCompleted = document.getElementById("ovCompleted");
+      const ovCancelled = document.getElementById("ovCancelled");
+
+      ovPatients.textContent = Object.keys(patients).length;
+      ovDoctors.textContent = doctors.length;
+
+      const todayStr = new Date().toISOString().slice(0, 10);
+      const todays = appointments.filter(a => a.date === todayStr);
+      ovToday.textContent = todays.length;
+      ovCompleted.textContent = appointments.filter(a => a.status === "Completed").length;
+      ovCancelled.textContent = appointments.filter(a => a.status === "Cancelled").length;
+    }
+
+    // ---- Doctors section ----
+    const docName = document.getElementById("docName");
+    const docSpec = document.getElementById("docSpec");
+    const docLogin = document.getElementById("docLogin");
+    const docPass = document.getElementById("docPass");
+    const addDocBtn = document.getElementById("addDocBtn");
+    const docMsg = document.getElementById("docMsg");
+    const doctorsBody = document.getElementById("doctorsBody");
+    const adFilterDoctor = document.getElementById("adFilterDoctor");
+
+    function renderDoctors() {
+      doctorsBody.innerHTML = "";
+      if (doctors.length === 0) {
+        const row = document.createElement("tr");
+        const cell = document.createElement("td");
+        cell.colSpan = 4;
+        cell.textContent = "No doctors configured.";
+        row.appendChild(cell);
+        doctorsBody.appendChild(row);
+      } else {
+        doctors.forEach((d, index) => {
+          const row = document.createElement("tr");
+          row.innerHTML =
+            "<td>" + d.id + "</td>" +
+            "<td>" + d.name + "</td>" +
+            "<td>" + d.spec + "</td>" +
+            "<td><button class='danger' data-index='" + index + "'>Delete</button></td>";
+          doctorsBody.appendChild(row);
+        });
+      }
+
+      // repopulate doctor filter in appointments tab
+      adFilterDoctor.innerHTML = "<option value=''>All</option>";
+      doctors.forEach(d => {
+        const label = d.name + " , " + d.spec;
+        const opt = document.createElement("option");
+        opt.value = label;
+        opt.textContent = label;
+        adFilterDoctor.appendChild(opt);
+      });
+
+      doctorsBody.querySelectorAll("button.danger").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const idx = parseInt(btn.getAttribute("data-index"), 10);
+          if (!Number.isNaN(idx)) {
+            doctors.splice(idx, 1);
+            saveDoctors();
+            renderDoctors();
+            refreshOverview();
+          }
+        });
+      });
+    }
+
+    addDocBtn.addEventListener("click", () => {
+      docMsg.textContent = "";
+      docMsg.classList.remove("error");
+      const name = docName.value.trim();
+      const spec = docSpec.value.trim();
+      const id = docLogin.value.trim();
+      const password = docPass.value.trim();
+
+      if (!name || !spec || !id || !password) {
+        docMsg.textContent = "Fill all doctor fields.";
+        docMsg.classList.add("error");
+        return;
+      }
+
+      if (doctors.some(d => d.id === id)) {
+        docMsg.textContent = "A doctor with this login ID already exists.";
+        docMsg.classList.add("error");
+        return;
+      }
+
+      doctors.push({ id, name, spec, password });
+      saveDoctors();
+      renderDoctors();
+      refreshOverview();
+      docMsg.textContent = "Doctor added successfully.";
+
+      docName.value = "";
+      docSpec.value = "";
+      docLogin.value = "";
+      docPass.value = "";
+    });
+
+    // ---- Patients table ----
+    const patientsBody = document.getElementById("patientsBody");
+    function renderPatients() {
+      patientsBody.innerHTML = "";
+      const ids = Object.keys(patients);
+      if (ids.length === 0) {
+        const row = document.createElement("tr");
+        const cell = document.createElement("td");
+        cell.colSpan = 4;
+        cell.textContent = "No patients found.";
+        row.appendChild(cell);
+        patientsBody.appendChild(row);
+        return;
+      }
+      ids.forEach(id => {
+        const p = patients[id];
+        const row = document.createElement("tr");
+        row.innerHTML =
+          "<td>" + id + "</td>" +
+          "<td>" + (p.name || "-") + "</td>" +
+          "<td>" + (p.email || "-") + "</td>" +
+          "<td>" + (p.contact || "-") + "</td>";
+        patientsBody.appendChild(row);
+      });
+    }
+
+    // ---- Appointments table (read-only) ----
+    const apptsBody = document.getElementById("apptsBody");
+    const adFilterDate = document.getElementById("adFilterDate");
+    const adFilterStatus = document.getElementById("adFilterStatus");
+    const adClearFilters = document.getElementById("adClearFilters");
+
+    function statusClass(status) {
+      if (status === "Checked-in") return "status-Checked-in";
+      if (status === "Completed") return "status-Completed";
+      if (status === "Cancelled") return "status-Cancelled";
+      return "status-Pending";
+    }
+
+    function renderAppointmentsAdmin() {
+      apptsBody.innerHTML = "";
+      if (!appointments || appointments.length === 0) {
+        const row = document.createElement("tr");
+        const cell = document.createElement("td");
+        cell.colSpan = 6;
+        cell.textContent = "No appointments found.";
+        row.appendChild(cell);
+        apptsBody.appendChild(row);
+        return;
+      }
+
+      const fDate = adFilterDate.value;
+      const fDoc = adFilterDoctor.value;
+      const fStatus = adFilterStatus.value;
+
+      const list = appointments
+        .filter(a => !fDate || a.date === fDate)
+        .filter(a => !fDoc || a.doctor === fDoc)
+        .filter(a => !fStatus || a.status === fStatus)
+        .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
+
+      if (list.length === 0) {
+        const row = document.createElement("tr");
+        const cell = document.createElement("td");
+        cell.colSpan = 6;
+        cell.textContent = "No appointments match the filters.";
+        row.appendChild(cell);
+        apptsBody.appendChild(row);
+        return;
+      }
+
+      list.forEach(a => {
+        const row = document.createElement("tr");
+        row.innerHTML =
+          "<td>" + a.id + "</td>" +
+          "<td>" + a.date + "</td>" +
+          "<td>" + a.time + "</td>" +
+          "<td>" + a.doctor + "</td>" +
+          "<td>" + (a.patientId || "Unknown") + "</td>" +
+          "<td><span class='status-badge " + statusClass(a.status) + "'>" +
+            a.status + "</span></td>";
+        apptsBody.appendChild(row);
+      });
+    }
+
+    adFilterDate.addEventListener("change", renderAppointmentsAdmin);
+    adFilterDoctor.addEventListener("change", renderAppointmentsAdmin);
+    adFilterStatus.addEventListener("change", renderAppointmentsAdmin);
+    adClearFilters.addEventListener("click", () => {
+      adFilterDate.value = "";
+      adFilterDoctor.value = "";
+      adFilterStatus.value = "";
+      renderAppointmentsAdmin();
+    });
+
+    // ---- Feedback aggregation ----
+    function renderFeedbackAdmin() {
+      const fbSummaryBody = document.getElementById("fbSummaryBody");
+      const fbDetailBody  = document.getElementById("fbDetailBody");
+      fbSummaryBody.innerHTML = "";
+      fbDetailBody.innerHTML  = "";
+
+      if (!feedbacks || feedbacks.length === 0) {
+        const r1 = document.createElement("tr");
+        const c1 = document.createElement("td");
+        c1.colSpan = 3;
+        c1.textContent = "No feedback submitted yet.";
+        r1.appendChild(c1);
+        fbSummaryBody.appendChild(r1);
+
+        const r2 = document.createElement("tr");
+        const c2 = document.createElement("td");
+        c2.colSpan = 5;
+        c2.textContent = "No reviews to display.";
+        r2.appendChild(c2);
+        fbDetailBody.appendChild(r2);
+        return;
+      }
+
+      const byDoctor = {};
+      feedbacks.forEach(f => {
+        const key = f.doctor;
+        if (!byDoctor[key]) {
+          byDoctor[key] = { total: 0, count: 0 };
+        }
+        byDoctor[key].total += Number(f.rating) || 0;
+        byDoctor[key].count += 1;
+
+        const row = document.createElement("tr");
+        row.innerHTML =
+          "<td>" + f.doctor + "</td>" +
+          "<td>" + f.rating + "</td>" +
+          "<td>" + (f.patientName || f.patientId || "-") + "</td>" +
+          "<td>" + (f.date || "") + "</td>" +
+          "<td>" + f.comments + "</td>";
+        fbDetailBody.appendChild(row);
+      });
+
+      Object.keys(byDoctor).forEach(doc => {
+        const info = byDoctor[doc];
+        const avg = (info.total / info.count).toFixed(1);
+        const row = document.createElement("tr");
+        row.innerHTML =
+          "<td>" + doc + "</td>" +
+          "<td>" + avg + " / 5</td>" +
+          "<td>" + info.count + "</td>";
+        fbSummaryBody.appendChild(row);
+      });
+    }
+
+    // ===== Medicine Management using administeredMedicines =====
+    let administeredMedicines = JSON.parse(localStorage.getItem("administeredMedicines") || "{}");
+    function saveMedicines() {
+      localStorage.setItem("administeredMedicines", JSON.stringify(administeredMedicines));
+    }
+
+    // Record Administration
+    document.getElementById('adminForm').onsubmit = function(e) {
+      e.preventDefault();
+      let med = document.getElementById('medicineName').value.trim();
+      let dose = document.getElementById('dose').value.trim();
+      let pid = document.getElementById('patientId').value.trim();
+      let medDetail = med + ' ' + dose;
+
+      if (!administeredMedicines[pid]) administeredMedicines[pid] = [];
+      if (!administeredMedicines[pid].includes(medDetail)) {
+        administeredMedicines[pid].push(medDetail);
+        document.getElementById('adminOutput').innerText =
+          `Medicine administration recorded: ${medDetail} for Patient ID: ${pid}`;
+      } else {
+        document.getElementById('adminOutput').innerText =
+          `Medicine already administered: ${medDetail} for Patient ID: ${pid}`;
+      }
+      saveMedicines();
+      this.reset();
+    };
+
+    // Verify Medicine
+    document.getElementById('verifyForm').onsubmit = function(e) {
+      e.preventDefault();
+      let inputText = document.getElementById('verifyMedicine').value.trim();
+      let patientIds = [];
+      for (let pid in administeredMedicines) {
+        if (administeredMedicines[pid].includes(inputText)) patientIds.push(pid);
+      }
+      document.getElementById('verifyOutput').innerText =
+        patientIds.length > 0
+          ? `Medicine "${inputText}" is administered for Patient ID(s): ${patientIds.join(', ')}`
+          : 'Medicine not registered.';
+      this.reset();
+    };
+
+    // Update Medicine
+    document.getElementById('updateForm').onsubmit = function(e) {
+      e.preventDefault();
+      let pid = document.getElementById('updPatientId').value.trim();
+      let oldMed = document.getElementById('oldMedicine').value.trim();
+      let newMed = document.getElementById('newMedicine').value.trim();
+
+      if (administeredMedicines[pid]) {
+        let idx = administeredMedicines[pid].indexOf(oldMed);
+        if (idx !== -1) {
+          administeredMedicines[pid][idx] = newMed;
+          document.getElementById('updateOutput').innerText =
+            `Medicine detail updated for Patient ID: ${pid}: "${oldMed}" replaced with "${newMed}"`;
+        } else {
+          document.getElementById('updateOutput').innerText =
+            `Old medicine not found for Patient ID: ${pid}.`;
+        }
+      } else {
+        document.getElementById('updateOutput').innerText =
+          `No medicines administered for Patient ID: ${pid}.`;
+      }
+      saveMedicines();
+      this.reset();
+    };
+
+    // ===== Prescription Medicines from prescriptionsByPatient =====
+    const prescForm = document.getElementById("prescLookupForm");
+    const prescPatientIdInput = document.getElementById("prescPatientId");
+    const prescOutput = document.getElementById("prescOutput");
+    const prescMedBody = document.getElementById("prescMedBody");
+
+    function fetchPrescriptionsForPatient(pid) {
+      prescMedBody.innerHTML = "";
+      prescOutput.textContent = "";
+
+      if (!pid) {
+        prescOutput.textContent = "Enter a Patient ID.";
+        return;
+      }
+
+      const raw = localStorage.getItem("prescriptionsByPatient");
+      if (!raw) {
+        prescOutput.textContent = "No prescriptions stored yet.";
+        return;
+      }
+
+      let allPres = {};
+      try { allPres = JSON.parse(raw); } catch (e) { allPres = {}; }
+
+      const list = allPres[pid] || [];
+      if (list.length === 0) {
+        prescOutput.textContent = "No prescriptions found for this patient ID.";
+        return;
+      }
+
+      list.forEach(p => {
+        const meds = p.medicines || [];
+        if (meds.length === 0) {
+          const row = document.createElement("tr");
+          row.innerHTML =
+            "<td>" + (p.date || "") + "</td>" +
+            "<td>" + (p.time || "") + "</td>" +
+            "<td>" + (p.doctor || "") + "</td>" +
+            "<td>" + (p.symptoms || "") + "</td>" +
+            "<td colspan='3'>No medicines listed</td>";
+          prescMedBody.appendChild(row);
+        } else {
+          meds.forEach(m => {
+            const row = document.createElement("tr");
+            row.innerHTML =
+              "<td>" + (p.date || "") + "</td>" +
+              "<td>" + (p.time || "") + "</td>" +
+              "<td>" + (p.doctor || "") + "</td>" +
+              "<td>" + (p.symptoms || "") + "</td>" +
+              "<td>" + (m.name || "") + "</td>" +
+              "<td>" + (m.dosage || "") + "</td>" +
+              "<td>" + (m.instructions || "") + "</td>";
+            prescMedBody.appendChild(row);
+          });
+        }
+      });
+
+      prescOutput.textContent = "Loaded " + list.length + " prescription record(s) for Patient ID: " + pid + ".";
+    }
+
+    prescForm.onsubmit = function(e) {
+      e.preventDefault();
+      const pid = prescPatientIdInput.value.trim();
+      fetchPrescriptionsForPatient(pid);
+    };
+
+    // Initial render
+    renderDoctors();
+    renderPatients();
+    renderAppointmentsAdmin();
+    refreshOverview();
+    renderFeedbackAdmin();
+  </script>
+</body>
+</html>
